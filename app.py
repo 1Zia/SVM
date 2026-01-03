@@ -1,17 +1,17 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import os
 import pickle
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+model = pickle.load(open(os.path.join(BASE_DIR, "svm_model.pkl"), "rb"))
+scaler = pickle.load(open(os.path.join(BASE_DIR, "scaler.pkl"), "rb"))
+feature_names = pickle.load(open(os.path.join(BASE_DIR, "features.pkl"), "rb"))
 
 st.set_page_config(page_title="Breast Cancer SVM", layout="centered")
 st.title("Breast Cancer Survival Prediction (SVM)")
-
-# ===============================
-# Load model assets
-# ===============================
-model = pickle.load(open("svm_model.pkl", "rb"))
-scaler = pickle.load(open("scaler.pkl", "rb"))
-feature_names = pickle.load(open("features.pkl", "rb"))
 
 # ===============================
 # User Inputs
