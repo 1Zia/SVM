@@ -1,46 +1,50 @@
 import pandas as pd
 import pickle
+
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
 from sklearn.svm import SVC
 
-# ===============================
 # Load dataset
-# ===============================
 data = pd.read_csv("Breast_Cancer.csv")
 
-# Target column (confirmed)
-target_col = "Status"
+# Target column
+y = data["Status"]          # Alive / Dead
+X = data.drop("Status", axis=1)
 
-# Encode target
-data[target_col] = data[target_col].astype("category").cat.codes
+# Identify column types
+categorical_cols = X.select_dtypes(include=["object"]).columns
+numerical_cols = X.select_dtypes(exclude=["object"]).columns
 
-# Separate X & y
-X = data.drop(target_col, axis=1)
-y = data[target_col]
+# Preprocessing
+preprocessor = ColumnTransformer(
+    transformers=[
+        ("num", StandardScaler(), numerical_cols),
+        ("cat", OneHotEncoder(handle_unknown="ignore"), categorical_cols)
+    ]
+)
 
-# One-hot encode categorical features
-X = pd.get_dummies(X, drop_first=True)
+# SVM model
+model = SVC(kernel="rbf", probability=True)
 
-# ✅ SAVE FEATURE NAMES
-feature_names = X.columns.tolist()
+# Pipeline
+pipeline = Pipeline(steps=[
+    ("preprocessor", preprocessor),
+    ("model", model)
+])
 
 # Train-test split
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
 
-# Scaling
-scaler = StandardScaler()
-X_train = scaler.fit_transform(X_train)
+# Train
+pipeline.fit(X_train, y_train)
 
-# Train SVM
-model = SVC(kernel="rbf", gamma=0.1, C=1)
-model.fit(X_train, y_train)
+# Save model
+with open("svm_pipeline.pkl", "wb") as f:
+    pickle.dump(pipeline, f)
 
-# Save everything
-pickle.dump(model, open("svm_model.pkl", "wb"))
-pickle.dump(scaler, open("scaler.pkl", "wb"))
-pickle.dump(feature_names, open("features.pkl", "wb"))
-
-print("✅ MODEL, SCALER & FEATURES SAVED")
+print("✅ Model trained & saved successfully")
